@@ -78,7 +78,7 @@ echo "📦 Repacking IPA..."
 cd extracted_ipa && zip -qr "../$IPA_RENAMED" * && cd ..
 
 echo "🔧 Running Azule to inject into frameworks..."
-azule -y -m -i "$IPA_RENAMED" -f "$EXTENSION_LIB" -o "packages/${BUNDLE_ID}_${APP_VERSION}_patched.ipa"
+azule -m -i "$IPA_RENAMED" -f "$EXTENSION_LIB" -o "packages/${BUNDLE_ID}_${APP_VERSION}_patched.ipa"
 
 if [ $? -eq 0 ]; then
     echo "✅ Azule successfully injected into frameworks!"
