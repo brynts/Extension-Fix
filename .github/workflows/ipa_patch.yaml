@@ -32,8 +32,11 @@ jobs:
             echo "wget already installed, skipping..."
           fi
 
-      - name: Build insert_dylib
-        run: |
+      - name: Create bin directory
+        run: mkdir -p src/bin
+
+      - name: Compile insert_dylib
+        run:  |
           xcrun clang -v -o src/bin/insert_dylib src/insert_dylib/main.c
           chmod +x src/bin/insert_dylib
 
