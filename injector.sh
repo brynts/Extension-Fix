@@ -69,10 +69,25 @@ else
     exit 1
 fi
 
+# Ambil BundleID & Versi dari Info.plist untuk rename IPA
+BUNDLE_ID=$(plutil -extract CFBundleIdentifier xml1 -o - "$INFO_PLIST" | sed -n 's/.*<string>\(.*\)<\/string>.*/\1/p' | tr -d ' ')
+APP_VERSION=$(plutil -extract CFBundleShortVersionString xml1 -o - "$INFO_PLIST" | sed -n 's/.*<string>\(.*\)<\/string>.*/\1/p' | tr -d ' ')
+IPA_RENAMED="packages/${BUNDLE_ID}_${APP_VERSION}.ipa"
+
 echo "📦 Repacking IPA..."
-cd extracted_ipa && zip -qr "../packages/downloaded_patched.ipa" * && cd ..
+cd extracted_ipa && zip -qr "../$IPA_RENAMED" * && cd ..
+
+echo "🔧 Running Azule to inject into frameworks..."
+azule -y -m -i "$IPA_RENAMED" -f "$EXTENSION_LIB" -o "packages/${BUNDLE_ID}_${APP_VERSION}_patched.ipa"
+
+if [ $? -eq 0 ]; then
+    echo "✅ Azule successfully injected into frameworks!"
+else
+    echo "❌ Error injecting with Azule!"
+    exit 1
+fi
 
 echo "🧹 Cleaning up..."
 rm -rf extracted_ipa inject_dylib.log
 
-echo "🎉 Patch completed: packages/downloaded_patched.ipa"
+echo "🎉 Patch completed: packages/${BUNDLE_ID}_${APP_VERSION}_patched.ipa"
