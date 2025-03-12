@@ -61,15 +61,21 @@ jobs:
       - name: Patch IPA
         run: ./injector.sh packages/downloaded.ipa
 
+      - name: Find patched IPA filename
+        id: find_patched_ipa
+        run: |
+          IPA_PATCHED=$(ls packages/*_patched.ipa | head -n 1)
+          echo "IPA_PATCHED=$IPA_PATCHED" >> $GITHUB_ENV
+
       - name: Upload patched IPA
         uses: actions/upload-artifact@v4
         with:
           name: patched-ipa
-          path: packages/*.ipa  # Ambil file IPA yang sudah dipatch tanpa rename
+          path: ${{ env.IPA_PATCHED }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: packages/*.ipa  # Ambil file IPA yang sudah dipatch tanpa rename
+          files: ${{ env.IPA_PATCHED }}
           draft: ${{ github.event.inputs.release_type == 'draft' }}
           tag_name: patched-ipa-${{ github.run_number }}
