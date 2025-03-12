@@ -34,7 +34,7 @@ jobs:
 
       - name: Build insert_dylib
         run: |
-          xcrun clang -o src/bin/insert_dylib src/insert_dylib/main.c
+          xcrun clang -v -o src/bin/insert_dylib src/insert_dylib/main.c
           chmod +x src/bin/insert_dylib
 
       # Beri izin eksekusi ke injector.sh
