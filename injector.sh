@@ -52,15 +52,24 @@ if [ ! -f "$APP_BINARY" ]; then
 fi
 
 echo "✅ Found binary: $APP_BINARY"
-echo "🔧 Injecting dylib..."
 
-# Cek apakah command timeout tersedia
-if command -v timeout >/dev/null 2>&1; then
-    echo "ℹ️ Running insert_dylib with timeout (60s)..."
-    timeout 60 "$INSERT_DYLIB" "$EXTENSION_LIB" "$APP_BINARY" --inplace
-else
+echo "🔧 Injecting dylib..."
+echo "ℹ️ Checking insert_dylib..."
+ls -l "$INSERT_DYLIB"
+file "$INSERT_DYLIB"
+
+if ! command -v timeout >/dev/null 2>&1; then
     echo "⚠️ Warning: timeout command not found! Running without timeout..."
-    "$INSERT_DYLIB" "$EXTENSION_LIB" "$APP_BINARY" --inplace
+    "$INSERT_DYLIB" "$EXTENSION_LIB" "$APP_BINARY" --inplace || {
+        echo "❌ Error: insert_dylib failed!"
+        exit 1
+    }
+else
+    echo "ℹ️ Running insert_dylib with timeout (60s)..."
+    timeout 60 "$INSERT_DYLIB" "$EXTENSION_LIB" "$APP_BINARY" --inplace || {
+        echo "❌ Error: insert_dylib failed or timed out!"
+        exit 1
+    }
 fi
 
 echo "📦 Repacking IPA..."
