@@ -26,7 +26,7 @@ rm -rf extracted_ipa && mkdir extracted_ipa
 unzip -q "$IPA_PATH" -d extracted_ipa
 
 echo "🔍 Finding Info.plist..."
-INFO_PLIST=$(find extracted_ipa/Payload -name "Info.plist" | head -n 1)
+INFO_PLIST=$(find extracted_ipa/Payload -maxdepth 2 -type f -name "Info.plist" | head -n 1)
 
 if [ -z "$INFO_PLIST" ]; then
     echo "❌ Error: No Info.plist found!"
