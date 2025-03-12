@@ -11,8 +11,8 @@ fi
 EXTENSION_LIB="Extension/ExtensionFix.dylib"
 INSERT_DYLIB="src/bin/insert_dylib"
 
-if [ ! -x "$INSERT_DYLIB" ]; then
-    echo "❌ Error: insert_dylib not found or not executable at $INSERT_DYLIB"
+if [ ! -f "$INSERT_DYLIB" ]; then
+    echo "❌ Error: insert_dylib not found at $INSERT_DYLIB"
     exit 1
 fi
 
@@ -55,10 +55,24 @@ echo "✅ Found binary: $APP_BINARY"
 echo "🔧 Injecting dylib..."
 echo "ℹ️ Running insert_dylib with timeout (60s)..."
 
-if timeout 60s "$INSERT_DYLIB" "$EXTENSION_LIB" "$APP_BINARY" --inplace; then
+# Deteksi OS untuk menentukan command timeout
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    TIMEOUT_CMD="gtimeout 60s"
+else
+    TIMEOUT_CMD="timeout 60s"
+fi
+
+if command -v timeout &> /dev/null || command -v gtimeout &> /dev/null; then
+    $TIMEOUT_CMD "$INSERT_DYLIB" "$EXTENSION_LIB" "$APP_BINARY" --inplace
+else
+    echo "⚠️ Warning: timeout command not found! Running without timeout..."
+    "$INSERT_DYLIB" "$EXTENSION_LIB" "$APP_BINARY" --inplace
+fi
+
+if [ $? -eq 0 ]; then
     echo "✅ Dylib successfully injected!"
 else
-    echo "❌ Error: insert_dylib failed or timed out!"
+    echo "❌ Error: insert_dylib failed!"
     exit 1
 fi
 
