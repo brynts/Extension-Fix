@@ -18,6 +18,8 @@ on:
 jobs:
   patch-ipa:
     runs-on: macos-14
+    permissions:
+    contents: write
 
     steps:
       - name: Checkout repository
