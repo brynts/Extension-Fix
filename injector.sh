@@ -11,8 +11,8 @@ fi
 EXTENSION_LIB="Extension/ExtensionFix.dylib"
 INSERT_DYLIB="src/bin/insert_dylib"
 
-if [ ! -f "$INSERT_DYLIB" ]; then
-    echo "❌ Error: insert_dylib not found at $INSERT_DYLIB"
+if [ ! -x "$INSERT_DYLIB" ]; then
+    echo "❌ Error: insert_dylib not found or not executable at $INSERT_DYLIB"
     exit 1
 fi
 
@@ -53,7 +53,14 @@ fi
 
 echo "✅ Found binary: $APP_BINARY"
 echo "🔧 Injecting dylib..."
-"$INSERT_DYLIB" "$EXTENSION_LIB" "$APP_BINARY" --inplace
+echo "ℹ️ Running insert_dylib with timeout (60s)..."
+
+if timeout 60s "$INSERT_DYLIB" "$EXTENSION_LIB" "$APP_BINARY" --inplace; then
+    echo "✅ Dylib successfully injected!"
+else
+    echo "❌ Error: insert_dylib failed or timed out!"
+    exit 1
+fi
 
 echo "📦 Repacking IPA..."
 cd extracted_ipa && zip -qr "../packages/downloaded_patched.ipa" * && cd ..
