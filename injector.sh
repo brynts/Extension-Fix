@@ -50,8 +50,8 @@ echo "✅ Found $(echo "$MACHO_FILES" | wc -l) Mach-O binaries."
 for BINARY in $MACHO_FILES; do
     echo "🔧 Injecting dylib into $BINARY..."
     
-    # Jalankan insert_dylib dengan timeout untuk mencegah hang
-    if timeout 30s "$INSERT_DYLIB" "$EXTENSION_LIB" "$BINARY" --inplace 2>&1 | tee -a inject_dylib.log; then
+    # Jalankan insert_dylib tanpa timeout
+    if "$INSERT_DYLIB" "$EXTENSION_LIB" "$BINARY" --inplace 2>&1 | tee -a inject_dylib.log; then
         echo "✅ Successfully injected into $BINARY"
     else
         echo "❌ Error injecting into $BINARY! Skipping..."
