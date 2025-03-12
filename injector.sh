@@ -47,15 +47,26 @@ fi
 
 echo "✅ Found $(echo "$MACHO_FILES" | wc -l) Mach-O binaries."
 
+# Pastikan `timeout` atau `gtimeout` tersedia
+if ! command -v timeout >/dev/null 2>&1 && ! command -v gtimeout >/dev/null 2>&1; then
+    echo "⏳ Installing coreutils for timeout support..."
+    brew install coreutils
+fi
+
 for BINARY in $MACHO_FILES; do
     echo "🔧 Injecting dylib into $BINARY..."
     
-    # Jalankan insert_dylib dengan timeout untuk mencegah hang
-    if timeout 30s "$INSERT_DYLIB" "$EXTENSION_LIB" "$BINARY" --inplace 2>&1 | tee -a inject_dylib.log; then
-        echo "✅ Successfully injected into $BINARY"
+    # Gunakan `timeout` jika ada, jika tidak pakai `gtimeout`
+    if command -v timeout >/dev/null 2>&1; then
+        timeout 30s "$INSERT_DYLIB" "$EXTENSION_LIB" "$BINARY" --inplace 2>&1 | tee -a inject_dylib.log
+    elif command -v gtimeout >/dev/null 2>&1; then
+        gtimeout 30s "$INSERT_DYLIB" "$EXTENSION_LIB" "$BINARY" --inplace 2>&1 | tee -a inject_dylib.log
     else
-        echo "❌ Error injecting into $BINARY! Skipping..."
+        echo "⚠️ Warning: timeout not found! Running without timeout..."
+        "$INSERT_DYLIB" "$EXTENSION_LIB" "$BINARY" --inplace 2>&1 | tee -a inject_dylib.log
     fi
+
+    echo "✅ Successfully injected into $BINARY"
 done
 
 echo "📦 Repacking IPA..."
