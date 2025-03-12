@@ -77,6 +77,9 @@ IPA_RENAMED="packages/${BUNDLE_ID}_${APP_VERSION}.ipa"
 echo "📦 Repacking IPA..."
 cd extracted_ipa && zip -qr "../$IPA_RENAMED" * && cd ..
 
+echo "ℹ️ IPA_RENAMED: $IPA_RENAMED"
+ls -l "$IPA_RENAMED"
+
 echo "🔧 Running Azule to inject into frameworks..."
 azule -m -i "$IPA_RENAMED" -f "$EXTENSION_LIB" -o "packages/${BUNDLE_ID}_${APP_VERSION}_patched.ipa"
 
