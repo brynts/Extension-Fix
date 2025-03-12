@@ -25,11 +25,29 @@ echo "📦 Extracting IPA..."
 rm -rf extracted_ipa && mkdir extracted_ipa
 unzip -q "$IPA_PATH" -d extracted_ipa
 
-echo "🔍 Finding main binary..."
-APP_BINARY=$(find extracted_ipa/Payload -type f -name "$(basename extracted_ipa/Payload/*.app)" -perm +111 -exec file {} \; | grep "Mach-O.*executable" | cut -d: -f1 | head -n 1)
+echo "🔍 Finding Info.plist..."
+INFO_PLIST=$(find extracted_ipa/Payload -name "Info.plist" | head -n 1)
 
-if [ -z "$APP_BINARY" ]; then
-    echo "❌ Error: No valid Mach-O binary found!"
+if [ -z "$INFO_PLIST" ]; then
+    echo "❌ Error: No Info.plist found!"
+    exit 1
+fi
+
+echo "✅ Found Info.plist at $INFO_PLIST"
+
+echo "🔍 Extracting executable name..."
+BINARY_NAME=$(plutil -extract CFBundleExecutable xml1 -o - "$INFO_PLIST" | sed -n 's/.*<string>\(.*\)<\/string>.*/\1/p')
+
+if [ -z "$BINARY_NAME" ]; then
+    echo "❌ Error: Could not determine executable name from Info.plist!"
+    exit 1
+fi
+
+APP_PATH=$(dirname "$INFO_PLIST")
+APP_BINARY="$APP_PATH/$BINARY_NAME"
+
+if [ ! -f "$APP_BINARY" ]; then
+    echo "❌ Error: Mach-O binary not found at $APP_BINARY"
     exit 1
 fi
 
