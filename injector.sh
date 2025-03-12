@@ -58,24 +58,21 @@ echo "ℹ️ Checking insert_dylib..."
 ls -l "$INSERT_DYLIB"
 file "$INSERT_DYLIB"
 
-if ! command -v timeout >/dev/null 2>&1; then
-    echo "⚠️ Warning: timeout command not found! Running without timeout..."
-    "$INSERT_DYLIB" "$EXTENSION_LIB" "$APP_BINARY" --inplace || {
-        echo "❌ Error: insert_dylib failed!"
-        exit 1
-    }
+echo "ℹ️ Running insert_dylib with debugging..."
+"$INSERT_DYLIB" --verbose "$EXTENSION_LIB" "$APP_BINARY" --inplace 2>&1 | tee inject_dylib.log
+
+if [ $? -eq 0 ]; then
+    echo "✅ Dylib successfully injected!"
 else
-    echo "ℹ️ Running insert_dylib with timeout (60s)..."
-    timeout 60 "$INSERT_DYLIB" "$EXTENSION_LIB" "$APP_BINARY" --inplace || {
-        echo "❌ Error: insert_dylib failed or timed out!"
-        exit 1
-    }
+    echo "❌ Error: insert_dylib failed!"
+    cat inject_dylib.log
+    exit 1
 fi
 
 echo "📦 Repacking IPA..."
 cd extracted_ipa && zip -qr "../packages/downloaded_patched.ipa" * && cd ..
 
 echo "🧹 Cleaning up..."
-rm -rf extracted_ipa
+rm -rf extracted_ipa inject_dylib.log
 
 echo "🎉 Patch completed: packages/downloaded_patched.ipa"
