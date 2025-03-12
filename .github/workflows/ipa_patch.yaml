@@ -34,7 +34,6 @@ jobs:
       - name: Verify Azule Installation
         run: azule -h || echo "Azule installed successfully!"
 
-      # Pastikan wget terinstall
       - name: Install wget (if not installed)
         run: |
           if ! command -v wget &> /dev/null; then
@@ -51,35 +50,26 @@ jobs:
           xcrun clang -v -o src/bin/insert_dylib src/insert_dylib/main.c
           chmod +x src/bin/insert_dylib
 
-      # Beri izin eksekusi ke injector.sh
       - name: Make injector.sh executable
         run: chmod +x injector.sh
 
-      # Download IPA dari direct link input user
       - name: Download IPA
         run: |
           mkdir -p packages
           wget -O packages/downloaded.ipa "${{ github.event.inputs.ipa_url }}"
 
-      # Jalankan injector untuk patch IPA
       - name: Patch IPA
         run: ./injector.sh packages/downloaded.ipa
 
-      # Simpan hasil IPA yang telah di-patch
-      - name: Rename patched IPA
-        run: mv packages/downloaded_patched.ipa packages/patched.ipa
-
-      # Upload hasil sebagai artifact
       - name: Upload patched IPA
         uses: actions/upload-artifact@v4
         with:
           name: patched-ipa
-          path: packages/patched.ipa
+          path: packages/*.ipa  # Ambil file IPA yang sudah dipatch tanpa rename
 
-      # Publish ke release atau draft berdasarkan input user
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: packages/patched.ipa
+          files: packages/*.ipa  # Ambil file IPA yang sudah dipatch tanpa rename
           draft: ${{ github.event.inputs.release_type == 'draft' }}
           tag_name: patched-ipa-${{ github.run_number }}
