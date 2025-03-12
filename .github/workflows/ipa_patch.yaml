@@ -25,6 +25,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install dependencies
+        run: |
+          brew install coreutils  # Untuk `timeout` & utilitas lainnya
+          git clone https://github.com/Al4ise/Azule ~/Azule
+          sudo ln -sf ~/Azule/azule /usr/local/bin/azule
+
+      - name: Verify Azule Installation
+        run: azule --help
+
       # Pastikan wget terinstall
       - name: Install wget (if not installed)
         run: |
