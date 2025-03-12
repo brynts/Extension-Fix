@@ -53,13 +53,11 @@ fi
 
 echo "✅ Found binary: $APP_BINARY"
 echo "🔧 Injecting dylib..."
-echo "ℹ️ Running insert_dylib with timeout (60s)..."
 
-# Coba pakai timeout, kalau tidak ada tetap lanjut tanpa timeout
-if command -v timeout &> /dev/null; then
-    timeout 60s "$INSERT_DYLIB" "$EXTENSION_LIB" "$APP_BINARY" --inplace
-elif command -v gtimeout &> /dev/null; then
-    gtimeout 60s "$INSERT_DYLIB" "$EXTENSION_LIB" "$APP_BINARY" --inplace
+# Cek apakah command timeout tersedia
+if command -v timeout >/dev/null 2>&1; then
+    echo "ℹ️ Running insert_dylib with timeout (60s)..."
+    timeout 60 "$INSERT_DYLIB" "$EXTENSION_LIB" "$APP_BINARY" --inplace
 else
     echo "⚠️ Warning: timeout command not found! Running without timeout..."
     "$INSERT_DYLIB" "$EXTENSION_LIB" "$APP_BINARY" --inplace
