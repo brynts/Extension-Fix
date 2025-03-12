@@ -55,25 +55,14 @@ echo "✅ Found binary: $APP_BINARY"
 echo "🔧 Injecting dylib..."
 echo "ℹ️ Running insert_dylib with timeout (60s)..."
 
-# Deteksi OS untuk menentukan command timeout
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    TIMEOUT_CMD="gtimeout 60s"
-else
-    TIMEOUT_CMD="timeout 60s"
-fi
-
-if command -v timeout &> /dev/null || command -v gtimeout &> /dev/null; then
-    $TIMEOUT_CMD "$INSERT_DYLIB" "$EXTENSION_LIB" "$APP_BINARY" --inplace
+# Coba pakai timeout, kalau tidak ada tetap lanjut tanpa timeout
+if command -v timeout &> /dev/null; then
+    timeout 60s "$INSERT_DYLIB" "$EXTENSION_LIB" "$APP_BINARY" --inplace
+elif command -v gtimeout &> /dev/null; then
+    gtimeout 60s "$INSERT_DYLIB" "$EXTENSION_LIB" "$APP_BINARY" --inplace
 else
     echo "⚠️ Warning: timeout command not found! Running without timeout..."
     "$INSERT_DYLIB" "$EXTENSION_LIB" "$APP_BINARY" --inplace
-fi
-
-if [ $? -eq 0 ]; then
-    echo "✅ Dylib successfully injected!"
-else
-    echo "❌ Error: insert_dylib failed!"
-    exit 1
 fi
 
 echo "📦 Repacking IPA..."
