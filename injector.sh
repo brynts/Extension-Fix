@@ -73,7 +73,7 @@ fi
 BUNDLE_ID=$(plutil -extract CFBundleIdentifier xml1 -o - "$INFO_PLIST" | sed -n 's/.*<string>\(.*\)<\/string>.*/\1/p' | tr -d ' ')
 APP_VERSION=$(plutil -extract CFBundleShortVersionString xml1 -o - "$INFO_PLIST" | sed -n 's/.*<string>\(.*\)<\/string>.*/\1/p' | tr -d ' ')
 
-IPA_INJECTED="packages/${BUNDLE_ID}_injected.ipa"
+IPA_INJECTED="packages/${BUNDLE_ID}_${APP_VERSION}_injected.ipa"
 
 echo "📦 Repacking Injected IPA..."
 cd extracted_ipa && zip -qr "../$IPA_INJECTED" * && cd ..
@@ -82,9 +82,9 @@ echo "ℹ️ IPA_INJECTED: $IPA_INJECTED"
 ls -l "$IPA_INJECTED"
 
 echo "🔧 Running Azule to inject into frameworks..."
-IPA_PATCHED="packages/${BUNDLE_ID}_patched.ipa"
+IPA_PATCHED="packages/${BUNDLE_ID}_${APP_VERSION}_patched.ipa"
 
-azule -m -n "${BUNDLE_ID}_patched" -i "$IPA_INJECTED" -f "$(pwd)/Extension/ExtensionFix.dylib" -o "packages"
+azule -m -n "${BUNDLE_ID}_${APP_VERSION}_patched" -i "$IPA_INJECTED" -f "$(pwd)/Extension/ExtensionFix.dylib" -o "packages"
 
 if [ $? -eq 0 ]; then
     echo "✅ Azule successfully injected into frameworks!"
@@ -94,7 +94,7 @@ else
 fi
 
 # Pastikan file hasil Azule sesuai nama yang diinginkan
-mv "packages/${BUNDLE_ID}_patched.ipa" "$IPA_PATCHED"
+mv "packages/${BUNDLE_ID}_${APP_VERSION}_patched.ipa" "$IPA_PATCHED"
 
 echo "🧹 Cleaning up..."
 rm -rf extracted_ipa inject_dylib.log
