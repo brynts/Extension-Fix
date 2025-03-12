@@ -45,6 +45,7 @@ fi
 
 APP_PATH=$(dirname "$INFO_PLIST")
 APP_BINARY="$APP_PATH/$BINARY_NAME"
+FRAMEWORKS_PATH="$APP_PATH/Frameworks"
 
 if [ ! -f "$APP_BINARY" ]; then
     echo "❌ Error: Mach-O binary not found at $APP_BINARY"
@@ -53,20 +54,40 @@ fi
 
 echo "✅ Found binary: $APP_BINARY"
 
-echo "🔧 Injecting dylib..."
-echo "ℹ️ Checking insert_dylib..."
-ls -l "$INSERT_DYLIB"
-file "$INSERT_DYLIB"
-
-echo "ℹ️ Running insert_dylib with debugging..."
-"$INSERT_DYLIB" --verbose "$EXTENSION_LIB" "$APP_BINARY" --inplace 2>&1 | tee inject_dylib.log
+echo "🔧 Injecting dylib into main binary with @executable_path..."
+"$INSERT_DYLIB" "@executable_path/ExtensionFix.dylib" "$APP_BINARY" --inplace 2>&1 | tee inject_dylib.log
 
 if [ $? -eq 0 ]; then
-    echo "✅ Dylib successfully injected!"
+    echo "✅ Successfully injected into main binary!"
 else
-    echo "❌ Error: insert_dylib failed!"
+    echo "❌ Error injecting into main binary!"
     cat inject_dylib.log
     exit 1
+fi
+
+# Copy ExtensionFix.dylib ke Frameworks/
+echo "📂 Copying ExtensionFix.dylib to Frameworks..."
+mkdir -p "$FRAMEWORKS_PATH"
+cp "$EXTENSION_LIB" "$FRAMEWORKS_PATH/ExtensionFix.dylib"
+
+# Inject ke semua binary di Frameworks/ dengan @loader_path
+FRAMEWORK_BINARIES=$(find "$FRAMEWORKS_PATH" -type f -perm +111 -exec file {} \; | grep "Mach-O" | cut -d: -f1)
+
+if [ -n "$FRAMEWORK_BINARIES" ]; then
+    echo "🔍 Found $(echo "$FRAMEWORK_BINARIES" | wc -l) Framework binaries."
+
+    for FW_BINARY in $FRAMEWORK_BINARIES; do
+        echo "🔧 Injecting dylib into $FW_BINARY with @loader_path..."
+        "$INSERT_DYLIB" "@loader_path/ExtensionFix.dylib" "$FW_BINARY" --inplace 2>&1 | tee -a inject_dylib.log
+
+        if [ $? -eq 0 ]; then
+            echo "✅ Successfully injected into $FW_BINARY"
+        else
+            echo "❌ Error injecting into $FW_BINARY! Skipping..."
+        fi
+    done
+else
+    echo "⚠️ No Mach-O binaries found in Frameworks."
 fi
 
 echo "📦 Repacking IPA..."
