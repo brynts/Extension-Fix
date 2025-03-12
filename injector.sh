@@ -35,44 +35,44 @@ fi
 
 echo "✅ Found Info.plist at $INFO_PLIST"
 
-APP_PATH=$(dirname "$INFO_PLIST")
+echo "🔍 Extracting executable name..."
+BINARY_NAME=$(plutil -extract CFBundleExecutable xml1 -o - "$INFO_PLIST" | sed -n 's/.*<string>\(.*\)<\/string>.*/\1/p')
 
-echo "🔍 Finding all Mach-O binaries in $APP_PATH..."
-MACHO_FILES=$(find "$APP_PATH" -type f -exec file {} \; | grep "Mach-O" | cut -d: -f1)
-
-if [ -z "$MACHO_FILES" ]; then
-    echo "❌ Error: No Mach-O binaries found!"
+if [ -z "$BINARY_NAME" ]; then
+    echo "❌ Error: Could not determine executable name from Info.plist!"
     exit 1
 fi
 
-echo "✅ Found $(echo "$MACHO_FILES" | wc -l) Mach-O binaries."
+APP_PATH=$(dirname "$INFO_PLIST")
+APP_BINARY="$APP_PATH/$BINARY_NAME"
 
-# Pastikan `timeout` atau `gtimeout` tersedia
-if ! command -v timeout >/dev/null 2>&1 && ! command -v gtimeout >/dev/null 2>&1; then
-    echo "⏳ Installing coreutils for timeout support..."
-    brew install coreutils
+if [ ! -f "$APP_BINARY" ]; then
+    echo "❌ Error: Mach-O binary not found at $APP_BINARY"
+    exit 1
 fi
 
-for BINARY in $MACHO_FILES; do
-    echo "🔧 Injecting dylib into $BINARY..."
-    
-    # Gunakan `timeout` jika ada, jika tidak pakai `gtimeout`
-    if command -v timeout >/dev/null 2>&1; then
-        timeout 30s "$INSERT_DYLIB" "$EXTENSION_LIB" "$BINARY" --inplace 2>&1 | tee -a inject_dylib.log
-    elif command -v gtimeout >/dev/null 2>&1; then
-        gtimeout 30s "$INSERT_DYLIB" "$EXTENSION_LIB" "$BINARY" --inplace 2>&1 | tee -a inject_dylib.log
-    else
-        echo "⚠️ Warning: timeout not found! Running without timeout..."
-        "$INSERT_DYLIB" "$EXTENSION_LIB" "$BINARY" --inplace 2>&1 | tee -a inject_dylib.log
-    fi
+echo "✅ Found binary: $APP_BINARY"
 
-    echo "✅ Successfully injected into $BINARY"
-done
+echo "🔧 Injecting dylib..."
+echo "ℹ️ Checking insert_dylib..."
+ls -l "$INSERT_DYLIB"
+file "$INSERT_DYLIB"
+
+echo "ℹ️ Running insert_dylib with debugging..."
+"$INSERT_DYLIB" --verbose "$EXTENSION_LIB" "$APP_BINARY" --inplace 2>&1 | tee inject_dylib.log
+
+if [ $? -eq 0 ]; then
+    echo "✅ Dylib successfully injected!"
+else
+    echo "❌ Error: insert_dylib failed!"
+    cat inject_dylib.log
+    exit 1
+fi
 
 echo "📦 Repacking IPA..."
 cd extracted_ipa && zip -qr "../packages/downloaded_patched.ipa" * && cd ..
 
 echo "🧹 Cleaning up..."
-rm -rf extracted_ipa
+rm -rf extracted_ipa inject_dylib.log
 
 echo "🎉 Patch completed: packages/downloaded_patched.ipa"
