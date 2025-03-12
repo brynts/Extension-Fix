@@ -81,7 +81,7 @@ echo "ℹ️ IPA_RENAMED: $IPA_RENAMED"
 ls -l "$IPA_RENAMED"
 
 echo "🔧 Running Azule to inject into frameworks..."
-azule -y -m -i "$IPA_RENAMED" -f "$EXTENSION_LIB" -o "$(pwd)/packages/${BUNDLE_ID}_${APP_VERSION}_patched.ipa"
+azule -m -i "$IPA_RENAMED" -f "$EXTENSION_LIB" -o "$(pwd)/packages/${BUNDLE_ID}_${APP_VERSION}_patched.ipa"
 
 if [ $? -eq 0 ]; then
     echo "✅ Azule successfully injected into frameworks!"
