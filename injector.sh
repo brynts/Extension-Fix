@@ -50,21 +50,12 @@ echo "✅ Found $(echo "$MACHO_FILES" | wc -l) Mach-O binaries."
 for BINARY in $MACHO_FILES; do
     echo "🔧 Injecting dylib into $BINARY..."
     
-    # Log sebelum inject
-    echo "ℹ️ Processing: $BINARY" >> inject_dylib.log
-
-    # Gunakan `timeout` kalau ada, jika tidak ada pakai `gtimeout`
-    if command -v timeout >/dev/null 2>&1; then
-        timeout 30s "$INSERT_DYLIB" "$EXTENSION_LIB" "$BINARY" --inplace 2>&1 | tee -a inject_dylib.log
-    elif command -v gtimeout >/dev/null 2>&1; then
-        gtimeout 30s "$INSERT_DYLIB" "$EXTENSION_LIB" "$BINARY" --inplace 2>&1 | tee -a inject_dylib.log
+    # Jalankan insert_dylib dengan timeout untuk mencegah hang
+    if timeout 30s "$INSERT_DYLIB" "$EXTENSION_LIB" "$BINARY" --inplace 2>&1 | tee -a inject_dylib.log; then
+        echo "✅ Successfully injected into $BINARY"
     else
-        "$INSERT_DYLIB" "$EXTENSION_LIB" "$BINARY" --inplace 2>&1 | tee -a inject_dylib.log
+        echo "❌ Error injecting into $BINARY! Skipping..."
     fi
-
-    # Log sesudah inject (jika berhasil)
-    echo "✅ Finished: $BINARY" >> inject_dylib.log
-    echo "✅ Successfully injected into $BINARY"
 done
 
 echo "📦 Repacking IPA..."
